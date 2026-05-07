@@ -1,0 +1,12 @@
+{
+  "phase": "running",
+  "currentDay": 1,
+  "currentTask": "D1-T2",
+  "currentTaskTitle": "一屏布局",
+  "lastCompletedTask": "D1-T1",
+  "lastValidation": "passed",
+  "blocked": false,
+  "blocker": "",
+  "nextAction": "将页面调整为 100vh 调度台，避免整体页面滚动",
+  "updatedAt": "2026-05-07T22:18:44+08:00"
+}

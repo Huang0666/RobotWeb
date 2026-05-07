@@ -1,0 +1,81 @@
+name: robotweb
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: services/api/Dockerfile
+    container_name: robotweb-api
+    environment:
+      PYTHONUNBUFFERED: "1"
+      DATABASE_URL: "postgresql://robotweb:robotweb_dev_password@postgres:5432/robotweb"
+      MQTT_HOST: emqx
+      MQTT_PORT: "1883"
+      ROS2_BRIDGE_URL: "http://ros2-bridge:8010"
+    ports:
+      - "18010:8000"
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+      emqx:
+        condition: service_started
+      ros2-bridge:
+        condition: service_started
+
+  ros2-bridge:
+    build:
+      context: ..
+      dockerfile: services/ros2-bridge/Dockerfile
+    container_name: robotweb-ros2-bridge
+    environment:
+      PYTHONUNBUFFERED: "1"
+      BRIDGE_MODE: "dry-run"
+    ports:
+      - "18020:8010"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: robotweb-postgres
+    environment:
+      POSTGRES_DB: robotweb
+      POSTGRES_USER: robotweb
+      POSTGRES_PASSWORD: robotweb_dev_password
+    ports:
+      - "15433:5432"
+    volumes:
+      - robotweb-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U robotweb -d robotweb"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  db-migrate:
+    image: postgres:16-alpine
+    container_name: robotweb-db-migrate
+    environment:
+      PGPASSWORD: robotweb_dev_password
+    volumes:
+      - ../database:/database:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        for file in /database/migrations/*.sql; do
+          psql -h postgres -U robotweb -d robotweb -v ON_ERROR_STOP=1 -f "$$file"
+        done
+
+  emqx:
+    image: emqx:5.8.3
+    container_name: robotweb-emqx
+    ports:
+      - "1884:1883"
+      - "28084:8083"
+      - "18084:18083"
+
+volumes:
+  robotweb-postgres-data:
