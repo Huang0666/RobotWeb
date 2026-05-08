@@ -6,6 +6,17 @@ test("renders the industrial inspection console and supports patrol controls", a
   await expect(page.getByText("RobotWeb")).toBeVisible();
   await expect(page.getByText("机器狗工业巡检控制台")).toBeVisible();
   await expect(page.getByText("接口 已连接")).toBeVisible({ timeout: 10_000 });
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const viewportHeight = window.innerHeight;
+        return (
+          document.documentElement.scrollHeight <= viewportHeight + 1 &&
+          document.body.scrollHeight <= viewportHeight + 1
+        );
+      }),
+    )
+    .toBe(true);
 
   const canvas = page.locator("canvas").first();
   await expect(canvas).toBeVisible();
