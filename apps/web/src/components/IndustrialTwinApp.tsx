@@ -1,4 +1,19 @@
-import { Layers, LocateFixed, MapPinned, Pause, Play, RotateCcw, Route, Square, Waypoints } from "lucide-react";
+import {
+  Bell,
+  ClipboardList,
+  FileText,
+  Home,
+  Layers,
+  LocateFixed,
+  MapPinned,
+  Pause,
+  Play,
+  RotateCcw,
+  Route,
+  Settings,
+  Square,
+  Waypoints,
+} from "lucide-react";
 import { useEffect } from "react";
 import { mapManifest, navGraph } from "../data/factoryMap";
 import { activeRouteDistance, useRobotStore } from "../store/robotStore";
@@ -28,6 +43,15 @@ const levelLabels: Record<LevelId, string> = {
   upper: "上层管廊",
 };
 
+const businessNavItems = [
+  { label: "巡检工作台", status: "当前", Icon: Home },
+  { label: "地图管理", status: "规划中", Icon: MapPinned },
+  { label: "任务管理", status: "规划中", Icon: ClipboardList },
+  { label: "事件管理", status: "规划中", Icon: Bell },
+  { label: "报告列表", status: "规划中", Icon: FileText },
+  { label: "系统设置", status: "规划中", Icon: Settings },
+] as const;
+
 export function IndustrialTwinApp() {
   const pose = useRobotStore((state) => state.pose);
   const activePath = useRobotStore((state) => state.activePath);
@@ -54,6 +78,9 @@ export function IndustrialTwinApp() {
   const toggleLayer = useRobotStore((state) => state.toggleLayer);
   const targetNode = navGraph.nodes.find((node) => node.id === selectedTargetId) ?? navGraph.nodes[0];
   const routeDistance = activeRouteDistance(activePath);
+  const visibleLayerCount = layerOrder.filter((key) => layers[key]).length;
+  const activeRouteText = activePath.length > 0 ? `${activePath.length} 个节点 / ${routeDistance.toFixed(1)}m` : "暂无当前路线";
+  const syncText = lastSyncedAt ? new Date(lastSyncedAt).toLocaleTimeString() : "等待同步";
 
   useEffect(() => {
     void hydrateFromApi();
@@ -85,6 +112,17 @@ export function IndustrialTwinApp() {
           </div>
         </div>
 
+        <nav className="business-nav" aria-label="业务导航">
+          <span className="rail-section-label">业务导航</span>
+          {businessNavItems.map(({ label, status, Icon }, index) => (
+            <button className={index === 0 ? "nav-item is-active" : "nav-item"} key={label} type="button">
+              <Icon size={16} />
+              <span>{label}</span>
+              <small>{status}</small>
+            </button>
+          ))}
+        </nav>
+
         <section className="panel compact">
           <div className="panel-title">
             <LocateFixed size={16} />
@@ -110,7 +148,7 @@ export function IndustrialTwinApp() {
           </dl>
           <div className={`api-status ${apiStatus}`}>
             <span>接口 {apiStatusLabels[apiStatus]}</span>
-            {lastSyncedAt ? <span>{new Date(lastSyncedAt).toLocaleTimeString()}</span> : null}
+            {lastSyncedAt ? <span>{syncText}</span> : null}
           </div>
           {apiError ? <p className="api-error">{apiError}</p> : null}
         </section>
@@ -174,16 +212,41 @@ export function IndustrialTwinApp() {
           </div>
         </header>
 
+        <div className="map-toolbar" aria-label="地图工具栏">
+          <div className="toolbar-group">
+            <span className="toolbar-label">地图工具栏</span>
+            <strong>3D 厂区视图</strong>
+          </div>
+          <div className="toolbar-group compact">
+            <span>图层 {visibleLayerCount}/{layerOrder.length}</span>
+            <span>目标 {targetNode.label}</span>
+            <span>楼层 {levelLabels[targetNode.level]}</span>
+          </div>
+        </div>
+
         <div className="canvas-card" data-testid="digital-twin-canvas">
           <FactoryCanvas />
           <div className="canvas-status">
             <span>点击地面或巡检点可选择目标</span>
-            <span>{activePath.length > 0 ? `${activePath.length} 个节点 / ${routeDistance.toFixed(1)}m` : "暂无当前路线"}</span>
+            <span>{activeRouteText}</span>
           </div>
         </div>
+
+        <footer className="bottom-statusbar" aria-label="系统状态">
+          <span>系统状态</span>
+          <span>接口 {apiStatusLabels[apiStatus]}</span>
+          <span>机器狗 {robotModeLabels[pose.mode]}</span>
+          <span>路线 {activeRouteText}</span>
+          <span>同步 {syncText}</span>
+        </footer>
       </section>
 
       <aside className="right-rail">
+        <div className="rail-heading">
+          <span>状态与任务</span>
+          <strong>目标、点位、路线</strong>
+        </div>
+
         <section className="panel">
           <div className="panel-title">
             <MapPinned size={16} />
