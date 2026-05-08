@@ -33,3 +33,19 @@
   - 沙箱内 `npm test` 和 `npm run e2e` 曾因 `spawn EPERM` 失败。
   - 使用已批准的命令前缀在沙箱外重跑后通过。
   - PowerShell 显示中文有乱码，但 UTF-8 码点检查正常。
+
+## 2026-05-08 09:45 - D1-T2 一屏布局验证
+
+- 状态：通过
+- 命令：
+  - `npm run build`
+  - `npm test`
+  - `npm run e2e`
+  - `python -m py_compile services/api/main.py services/ros2-bridge/main.py`
+- 结果：
+  - build 通过；Vite 仍提示 Three.js 相关产物超过 500 kB，这是既有体积警告。
+  - Vitest 3 个测试文件、7 个测试通过。
+  - Playwright 1 个浏览器测试通过，包含文档高度不超过视口的一屏断言。
+  - Python 编译通过。
+- 环境备注：
+  - Playwright 运行时仍有 Three.js deprecation console warning，不影响当前任务验收。
